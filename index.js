@@ -1,5 +1,5 @@
 import './style.css';
-import gsap, { Power3 } from 'gsap';
+import gsap from 'gsap';
 
 const roundedClipPath = (ctx, x, y, width, height, radius) => {
   ctx.beginPath();
@@ -26,6 +26,7 @@ class Grid {
     this.canvas = document.createElement('canvas');
     this.parent = document.querySelector('#containerCanvas');
     this.timeline = gsap.timeline();
+    this.timelineHover = gsap.timeline();
     this.baseCellSize = 86;
     this.cellWidth = this.baseCellSize;
     this.cellHeight = this.baseCellSize;
@@ -73,29 +74,87 @@ class Grid {
     }
   }
 
-  getIndex(x, y, rows) {
-    const col = Math.floor(x / this.cellWidth);
-    const row = Math.floor(y / this.cellHeight);
-    return row * rows + col;
+  hoverEffect(x, y) {
+    this.ctx.beginPath();
+    this.fillStyle = 'rgba(255,0,0,0.5)';
+    this.ctx.rect(x, y, 100, 100);
+    this.ctx.fill();
   }
 
-  onCellClick(e) {
+  getIndex(e) {
     const rect = this.canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    this.animateBoxes(this.getIndex(x, y, this.grid[1]));
+    const col = Math.floor(x / this.cellWidth);
+    const row = Math.floor(y / this.cellHeight);
+    return row * this.grid[1] + col;
+  }
+
+  onCellClick(e) {
+    this.animateBoxes(this.getIndex(e));
   }
 
   events() {
     this.setUp();
 
-    window.addEventListener('resize', () => {
+    this.lastIndex = 0;
+
+    const handleMouseMove = (e) => {
+      const hoveredIndex = this.getIndex(e);
+      if (this.lastIndex !== hoveredIndex) {
+        this.animateHover(
+          this.cells[hoveredIndex].x,
+          this.cells[hoveredIndex].y,
+          1
+        );
+        this.lastIndex = hoveredIndex;
+      }
+    };
+
+    const handleMouseEnter = (e) => {
+      const hoveredIndex = this.getIndex(e);
+      this.animateHover(
+        this.cells[hoveredIndex].x,
+        this.cells[hoveredIndex].y,
+        1
+      );
+      this.lastIndex = hoveredIndex;
+    };
+
+    const handleMouseLeave = (e) => {
+      this.animateHover(
+        this.cells[this.lastIndex].x,
+        this.cells[this.lastIndex].y,
+        0
+      );
+      this.lastIndex = this.getIndex(e);
+    };
+
+    const handleResize = () => {
       this.setUp();
       this.buildGrid();
-    });
+    };
 
-    this.canvas.addEventListener('click', (e) => {
+    const handleClick = (e) => {
       this.onCellClick(e);
+    };
+
+    window.addEventListener('resize', handleResize);
+    this.canvas.addEventListener('click', handleClick);
+    this.canvas.addEventListener('mousemove', handleMouseMove);
+    this.canvas.addEventListener('mouseenter', handleMouseEnter);
+    this.canvas.addEventListener('mouseleave', handleMouseLeave);
+  }
+
+  animateHover(x, y, opacity) {
+    this.timelineHover.clear();
+    this.timelineHover.to(this.cellHover, {
+      x,
+      y,
+      opacity,
+      duration: 0.8,
+      ease: 'expo.out',
+      onUpdate: () => this.onUpdate(),
     });
   }
 
@@ -113,28 +172,35 @@ class Grid {
         grid: this.grid,
         from,
       },
-      ease: Power3.easeOut,
-      onUpdate: () => {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.cells.forEach((cell) => cell.draw());
-      },
+      ease: 'power3.out',
+      onUpdate: () => this.onUpdate(),
     });
     // .to(this.cells, {
     //   duration: 1.3,
     //   width: 200,
     //   height: 200,
     //   ease: Power3.easeOut,
-    //   onUpdate: () => {
-    //     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    //     this.cells.forEach((cell) => cell.draw());
-    //   },
-    // }, '<+=1')
+    //   onUpdate: () => this.onUpdate(),
+    // })
+  }
+
+  onUpdate() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.cells.forEach((cell) => cell.draw());
+    this.cellHover.draw();
   }
 
   init() {
     this.parent.appendChild(this.canvas);
     this.events();
     this.ctx = this.canvas.getContext('2d');
+    this.cellHover = new CellHover({
+      ctx: this.ctx,
+      x: 0,
+      y: 0,
+      width: this.cellWidth,
+      height: this.cellHeight,
+    });
     this.buildGrid();
   }
 }
@@ -174,7 +240,6 @@ class Cell {
       this.borderRadius
     );
     this.ctx.clip();
-
     this.ctx.drawImage(
       this.image,
       this.x,
@@ -191,6 +256,33 @@ class Cell {
       this.ctx.rect(this.x, this.y, this.width, this.height);
       this.ctx.fill();
     }
+    this.ctx.restore();
+  }
+}
+
+class CellHover {
+  constructor({ ctx, x, y, width, height }) {
+    this.ctx = ctx;
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.opacity = 0;
+  }
+
+  draw() {
+    this.ctx.save();
+    this.ctx.beginPath();
+    roundedClipPath(this.ctx, this.x, this.y, this.width, this.height, 6);
+    this.ctx.clip();
+    this.ctx.strokeStyle = `rgba(255,255,255,${this.opacity})`;
+    this.ctx.lineWidth = 5;
+    this.ctx.rect(this.x, this.y, this.width, this.height);
+    this.ctx.shadowColor = `rgba(255,255,255,${this.opacity})`;
+    this.ctx.shadowBlur = 10;
+    this.ctx.shadowOffsetX = 0;
+    this.ctx.shadowOffsetY = 0;
+    this.ctx.stroke();
     this.ctx.restore();
   }
 }
