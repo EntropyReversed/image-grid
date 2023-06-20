@@ -36,7 +36,8 @@ const roundedClipPath = (ctx, x, y, width, height, radius) => {
 
 const getImage = () => {
   const image = new Image();
-  image.src = 'https://picsum.photos/1920/1080';
+  image.src = './NDOR.jpg';
+  // image.src = 'https://picsum.photos/1920/1080';
   return image;
 };
 
