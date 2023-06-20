@@ -1,5 +1,24 @@
 import './style.css';
 import gsap from 'gsap';
+import barba from '@barba/core';
+// barba.init({
+//   debug: true,
+//   transitions: [
+//     {
+//       name: 'opacity-transition',
+//       leave(data) {
+//         return gsap.to(data.current.container, {
+//           opacity: 0,
+//         });
+//       },
+//       enter(data) {
+//         return gsap.from(data.next.container, {
+//           opacity: 0,
+//         });
+//       },
+//     },
+//   ],
+// });
 
 const roundedClipPath = (ctx, x, y, width, height, radius) => {
   ctx.beginPath();
@@ -284,7 +303,35 @@ class CellHover {
     this.ctx.shadowOffsetY = 0;
     this.ctx.stroke();
     this.ctx.restore();
+
+
+
+    // this.ctx.save();
+    // this.ctx.beginPath();
+    // roundedClipPath(this.ctx, this.x, this.y, this.width, this.height, 6);
+    // this.ctx.clip();
+
+    // // Get the pixel data of the background image at the top-left corner of the rectangle
+    // const imageData = this.ctx.getImageData(this.x, this.y, 1, 1);
+    // const [r, g, b] = imageData.data;
+
+    // // Invert the stroke color based on the average of the RGB values
+    // const averageColor = (r + g + b) / 3;
+    // const invertedColor = 255 - averageColor;
+
+    // // Set the stroke color and shadow color using the inverted value
+    // this.ctx.strokeStyle = `rgba(${invertedColor}, ${invertedColor}, ${invertedColor}, ${this.opacity})`;
+    // this.ctx.shadowColor = `rgba(${invertedColor}, ${invertedColor}, ${invertedColor}, ${this.opacity})`;
+
+    // this.ctx.lineWidth = 5;
+    // this.ctx.rect(this.x, this.y, this.width, this.height);
+    // this.ctx.shadowBlur = 10;
+    // this.ctx.shadowOffsetX = 0;
+    // this.ctx.shadowOffsetY = 0;
+    // this.ctx.stroke();
+    // this.ctx.restore();
   }
 }
+
 
 new Grid();
