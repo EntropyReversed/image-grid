@@ -36,8 +36,11 @@ const roundedClipPath = (ctx, x, y, width, height, radius) => {
 
 const getImage = () => {
   const image = new Image();
-  image.src = './NDOR.jpg';
-  // image.src = 'https://picsum.photos/1920/1080';
+  // image.src = './image.jpg';
+  // image.width = '1769';
+  // image.height = '2167';
+  // console.log(image);
+  image.src = 'https://picsum.photos/1920/1080';
   return image;
 };
 
@@ -305,8 +308,6 @@ class CellHover {
     this.ctx.stroke();
     this.ctx.restore();
 
-
-
     // this.ctx.save();
     // this.ctx.beginPath();
     // roundedClipPath(this.ctx, this.x, this.y, this.width, this.height, 6);
@@ -333,6 +334,5 @@ class CellHover {
     // this.ctx.restore();
   }
 }
-
 
 new Grid();
