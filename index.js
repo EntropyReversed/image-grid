@@ -79,21 +79,20 @@ class Grid {
     this.cells = [];
 
     for (let i = 0; i < this.numberOfCells; i++) {
-      const x = (i % this.cols) * this.cellWidth;
-      const y = Math.floor(i / this.cols) * this.cellHeight;
-      const cell = new Cell({
-        ctx: this.ctx,
-        x,
-        y,
-        width: this.cellWidth,
-        height: this.cellHeight,
-        image: this.image,
-        gap: this.gap,
-        blackOut: Math.random() > 1,
-        index: i,
-      });
-      this.cells.push(cell);
-      cell.draw();
+      this.cells.push(
+        new Cell({
+          ctx: this.ctx,
+          width: this.cellWidth,
+          height: this.cellHeight,
+          image: this.image,
+          gap: this.gap,
+          blackOut: Math.random() > 1,
+          cols: this.cols,
+          offsetX: 0,
+          offsetY: 0,
+          index: i,
+        })
+      );
     }
   }
 
@@ -155,6 +154,7 @@ class Grid {
 
     const handleResize = () => {
       this.setUp();
+      this.createHover();
       this.buildGrid();
     };
 
@@ -181,6 +181,16 @@ class Grid {
     });
   }
 
+  createHover() {
+    this.cellHover = new CellHover({
+      ctx: this.ctx,
+      x: 0,
+      y: 0,
+      width: this.cellWidth,
+      height: this.cellHeight,
+    });
+  }
+
   animateBoxes(from) {
     this.timeline.seek(0).clear();
 
@@ -200,9 +210,11 @@ class Grid {
     });
     // .to(this.cells, {
     //   duration: 1.3,
-    //   width: 200,
-    //   height: 200,
-    //   ease: Power3.easeOut,
+    //   offsetX: -this.cells[from].x,
+    //   offsetY: -this.cells[from].y,
+    //   width: 160,
+    //   height: 160,
+    //   ease: 'power3.out',
     //   onUpdate: () => this.onUpdate(),
     // })
   }
@@ -217,22 +229,25 @@ class Grid {
     this.parent.appendChild(this.canvas);
     this.events();
     this.ctx = this.canvas.getContext('2d');
-    this.cellHover = new CellHover({
-      ctx: this.ctx,
-      x: 0,
-      y: 0,
-      width: this.cellWidth,
-      height: this.cellHeight,
-    });
+    this.createHover();
     this.buildGrid();
   }
 }
 
 class Cell {
-  constructor({ ctx, x, y, width, height, image, gap, blackOut, index }) {
+  constructor({
+    ctx,
+    width,
+    height,
+    image,
+    gap,
+    blackOut,
+    cols,
+    offsetX,
+    offsetY,
+    index,
+  }) {
     this.ctx = ctx;
-    this.x = x;
-    this.y = y;
     this.scale = 1;
     this.opacity = 1;
     this.width = width;
@@ -241,10 +256,18 @@ class Cell {
     this.blackOut = blackOut;
     this.gap = gap;
     this.borderRadius = 6;
+    this.cols = cols;
+    this.offsetX = offsetX;
+    this.offsetY = offsetY;
     this.index = index;
+
+    this.draw();
   }
 
   draw() {
+    this.x = (this.index % this.cols) * this.width + this.offsetX;
+    this.y = Math.floor(this.index / this.cols) * this.height + this.offsetY;
+
     this.ctx.save();
     this.ctx.globalAlpha = this.opacity;
     this.ctx.beginPath();
