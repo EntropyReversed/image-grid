@@ -58,6 +58,7 @@ class Grid {
     this.image.onload = () => {
       this.init();
     };
+
   }
 
   setUp() {
@@ -84,7 +85,7 @@ class Grid {
           ctx: this.ctx,
           width: this.cellWidth,
           height: this.cellHeight,
-          image: this.image,
+          image: this.imageCanvas.canvas,
           gap: this.gap,
           blackOut: Math.random() > 1,
           cols: this.cols,
@@ -154,6 +155,9 @@ class Grid {
 
     const handleResize = () => {
       this.setUp();
+      if (this.imageCanvas) {
+        this.imageCanvas.onResize(this.canvas.width, this.canvas.height, 0)
+      }
       this.createHover();
       this.buildGrid();
     };
@@ -221,13 +225,16 @@ class Grid {
 
   onUpdate() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
     this.cells.forEach((cell) => cell.draw());
+    this.imageCanvas.draw()
     this.cellHover.draw();
   }
 
   init() {
     this.parent.appendChild(this.canvas);
     this.events();
+    this.imageCanvas = new ImageCanvas(this.image, this.canvas, 0)
     this.ctx = this.canvas.getContext('2d');
     this.createHover();
     this.buildGrid();
@@ -355,6 +362,49 @@ class CellHover {
     // this.ctx.shadowOffsetY = 0;
     // this.ctx.stroke();
     // this.ctx.restore();
+  }
+}
+
+class ImageCanvas {
+  constructor(image, mainCanvas, offsetX) {
+    this.mainCanvas = mainCanvas;
+    this.image = image;
+    this.canvas = document.createElement('canvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.imageWidth = this.image.width;
+    this.imageHeight = this.image.height;
+    this.sceneOffsetX = offsetX;
+    this.offsetX = offsetX;
+    this.offsetY = 0;
+    this.imageScale = 1;
+    this.setUp();
+  }
+
+  onResize(width, height, sceneOffsetX) {
+    this.canvas.width = width;
+    this.canvas.height = height;
+    this.sceneOffsetX = sceneOffsetX;
+    this.draw();
+  }
+
+  setUp() {
+    this.canvas.width = this.mainCanvas.width;
+    this.canvas.height = this.mainCanvas.height;
+    this.offsetX = this.sceneOffsetX;
+    this.draw();
+  }
+
+  draw() {
+    const cw = (this.canvas.width - this.sceneOffsetX) * this.imageScale;
+    const ch = this.canvas.height * this.imageScale;
+    console.log(this.canvas.width, this.canvas.height, this.sceneOffsetX, this.imageScale)
+    const scale = Math.max(cw / this.imageWidth, ch / this.imageHeight);
+    const x = (cw - scale * this.imageWidth) * 0.5 + this.offsetX;
+    const y = (ch - scale * this.imageHeight) * 0.5 + this.offsetY;
+
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.setTransform(scale, 0, 0, scale, x, y);
+    this.ctx.drawImage(this.image, 0, 0);
   }
 }
 
