@@ -54,7 +54,7 @@ class Grid {
     this.baseCellSize = 86;
     this.cellWidth = this.baseCellSize;
     this.cellHeight = this.baseCellSize;
-    this.gap = 2;
+    this.gap = 1;
     this.image = getImage();
     this.image.onload = () => {
       this.init();
@@ -262,7 +262,7 @@ class Cell {
     this.image = image;
     this.blackOut = blackOut;
     this.gap = gap;
-    this.borderRadius = 6;
+    this.borderRadius = 20;
     this.cols = cols;
     this.offsetX = offsetX;
     this.offsetY = offsetY;
