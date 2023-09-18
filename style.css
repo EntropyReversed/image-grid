@@ -31,7 +31,6 @@ body {
   height: 100%;
   box-shadow: inset 0 0 0 2px #222;
   position: relative;
-  cursor: pointer;
   border-radius: 4px;
 }
 .box::before {
@@ -50,8 +49,4 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-}
-
-canvas {
-  cursor: pointer;
 }

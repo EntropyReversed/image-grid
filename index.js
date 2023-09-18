@@ -45,11 +45,12 @@ const getImage = () => {
 };
 
 class Grid {
-  constructor() {
+  constructor(blackOutCells) {
     this.canvas = document.createElement('canvas');
     this.parent = document.querySelector('#containerCanvas');
     this.timeline = gsap.timeline();
     this.timelineHover = gsap.timeline();
+    this.blackOutCells = blackOutCells ?? [];
     this.baseCellSize = 86;
     this.cellWidth = this.baseCellSize;
     this.cellHeight = this.baseCellSize;
@@ -58,7 +59,6 @@ class Grid {
     this.image.onload = () => {
       this.init();
     };
-
   }
 
   setUp() {
@@ -87,7 +87,8 @@ class Grid {
           height: this.cellHeight,
           image: this.imageCanvas.canvas,
           gap: this.gap,
-          blackOut: Math.random() > 1,
+          blackOut:
+            this.blackOutCells.filter((bCell) => bCell === i)?.length > 0,
           cols: this.cols,
           offsetX: 0,
           offsetY: 0,
@@ -122,55 +123,54 @@ class Grid {
 
     this.lastIndex = 0;
 
-    const handleMouseMove = (e) => {
-      const hoveredIndex = this.getIndex(e);
-      if (this.lastIndex !== hoveredIndex) {
-        this.animateHover(
-          this.cells[hoveredIndex].x,
-          this.cells[hoveredIndex].y,
-          1
-        );
-        this.lastIndex = hoveredIndex;
-      }
-    };
+    // const handleMouseMove = (e) => {
+    //   const hoveredIndex = this.getIndex(e);
+    //   if (this.lastIndex !== hoveredIndex) {
+    //     this.animateHover(
+    //       this.cells[hoveredIndex].x,
+    //       this.cells[hoveredIndex].y,
+    //       1
+    //     );
+    //     this.lastIndex = hoveredIndex;
+    //   }
+    // };
 
-    const handleMouseEnter = (e) => {
-      const hoveredIndex = this.getIndex(e);
-      this.animateHover(
-        this.cells[hoveredIndex].x,
-        this.cells[hoveredIndex].y,
-        1
-      );
-      this.lastIndex = hoveredIndex;
-    };
+    // const handleMouseEnter = (e) => {
+    //   const hoveredIndex = this.getIndex(e);
+    //   this.animateHover(
+    //     this.cells[hoveredIndex].x,
+    //     this.cells[hoveredIndex].y,
+    //     1
+    //   );
+    //   this.lastIndex = hoveredIndex;
+    // };
 
-    const handleMouseLeave = (e) => {
-      this.animateHover(
-        this.cells[this.lastIndex].x,
-        this.cells[this.lastIndex].y,
-        0
-      );
-      this.lastIndex = this.getIndex(e);
-    };
+    // const handleMouseLeave = (e) => {
+    //   this.animateHover(
+    //     this.cells[this.lastIndex].x,
+    //     this.cells[this.lastIndex].y,
+    //     0
+    //   );
+    //   this.lastIndex = this.getIndex(e);
+    // };
+    // const handleClick = (e) => {
+    //   this.onCellClick(e);
+    // };
 
     const handleResize = () => {
       this.setUp();
       if (this.imageCanvas) {
-        this.imageCanvas.onResize(this.canvas.width, this.canvas.height, 0)
+        this.imageCanvas.onResize(this.canvas.width, this.canvas.height, 0);
       }
       this.createHover();
       this.buildGrid();
     };
 
-    const handleClick = (e) => {
-      this.onCellClick(e);
-    };
-
     window.addEventListener('resize', handleResize);
-    this.canvas.addEventListener('click', handleClick);
-    this.canvas.addEventListener('mousemove', handleMouseMove);
-    this.canvas.addEventListener('mouseenter', handleMouseEnter);
-    this.canvas.addEventListener('mouseleave', handleMouseLeave);
+    // this.canvas.addEventListener('click', handleClick);
+    // this.canvas.addEventListener('mousemove', handleMouseMove);
+    // this.canvas.addEventListener('mouseenter', handleMouseEnter);
+    // this.canvas.addEventListener('mouseleave', handleMouseLeave);
   }
 
   animateHover(x, y, opacity) {
@@ -227,14 +227,14 @@ class Grid {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     this.cells.forEach((cell) => cell.draw());
-    this.imageCanvas.draw()
+    this.imageCanvas.draw();
     this.cellHover.draw();
   }
 
   init() {
     this.parent.appendChild(this.canvas);
     this.events();
-    this.imageCanvas = new ImageCanvas(this.image, this.canvas, 0)
+    this.imageCanvas = new ImageCanvas(this.image, this.canvas, 0);
     this.ctx = this.canvas.getContext('2d');
     this.createHover();
     this.buildGrid();
@@ -278,36 +278,41 @@ class Cell {
     this.ctx.save();
     this.ctx.globalAlpha = this.opacity;
     this.ctx.beginPath();
-    this.ctx.translate(this.x + this.width * 0.5, this.y + this.height * 0.5);
+    this.ctx.setTransform(
+      this.scale,
+      0,
+      0,
+      this.scale,
+      this.x + this.width * 0.5,
+      this.y + this.height * 0.5
+    );
+    // this.ctx.translate(this.x + this.width * 0.5, this.y + this.height * 0.5);
     this.destinationX = this.width * -0.5 + this.gap;
     this.destinationY = this.height * -0.5 + this.gap;
     this.destinationSizeWidth = this.width - this.gap * 2;
     this.destinationSizeHeight = this.height - this.gap * 2;
-    this.ctx.scale(this.scale, this.scale);
-    roundedClipPath(
-      this.ctx,
-      this.destinationX,
-      this.destinationY,
-      this.destinationSizeWidth,
-      this.destinationSizeHeight,
-      this.borderRadius
-    );
-    this.ctx.clip();
-    this.ctx.drawImage(
-      this.image,
-      this.x,
-      this.y,
-      this.width,
-      this.height,
-      this.destinationX,
-      this.destinationY,
-      this.destinationSizeWidth,
-      this.destinationSizeHeight
-    );
-    if (this.blackOut) {
-      this.ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      this.ctx.rect(this.x, this.y, this.width, this.height);
-      this.ctx.fill();
+    // this.ctx.scale(this.scale, this.scale);
+    if (!this.blackOut) {
+      roundedClipPath(
+        this.ctx,
+        this.destinationX,
+        this.destinationY,
+        this.destinationSizeWidth,
+        this.destinationSizeHeight,
+        this.borderRadius
+      );
+      this.ctx.clip();
+      this.ctx.drawImage(
+        this.image,
+        this.x + this.gap,
+        this.y + this.gap,
+        this.width,
+        this.height,
+        this.destinationX,
+        this.destinationY,
+        this.destinationSizeWidth,
+        this.destinationSizeHeight
+      );
     }
     this.ctx.restore();
   }
@@ -397,7 +402,7 @@ class ImageCanvas {
   draw() {
     const cw = (this.canvas.width - this.sceneOffsetX) * this.imageScale;
     const ch = this.canvas.height * this.imageScale;
-    console.log(this.canvas.width, this.canvas.height, this.sceneOffsetX, this.imageScale)
+
     const scale = Math.max(cw / this.imageWidth, ch / this.imageHeight);
     const x = (cw - scale * this.imageWidth) * 0.5 + this.offsetX;
     const y = (ch - scale * this.imageHeight) * 0.5 + this.offsetY;
@@ -408,4 +413,11 @@ class ImageCanvas {
   }
 }
 
-new Grid();
+const randomNumbers = [];
+
+for (let i = 0; i < 100; i++) {
+  const randomNumber = Math.floor(Math.random() * 401);
+  randomNumbers.push(randomNumber);
+}
+
+new Grid(randomNumbers);
