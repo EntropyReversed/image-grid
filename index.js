@@ -58,7 +58,9 @@ class SimpleGrid {
   setUp() {
     this.wrapWidth = this.wrap.getBoundingClientRect().width;
     this.wrapHeight = this.wrap.getBoundingClientRect().height;
-    this.baseCellSize = this.wrapWidth / (this.wrapWidth < 1000 ? 10 : 20);
+    this.baseCellSize =
+      this.wrapWidth /
+      (this.wrapWidth > 1000 ? 20 : this.wrapWidth > 500 ? 10 : 6);
     this.cellWidth = this.baseCellSize;
     this.cellHeight = this.baseCellSize;
     this.canvas.width = this.wrapWidth;
@@ -133,7 +135,7 @@ class Cell {
     this.image = image;
     this.blackOut = blackOut;
     this.gap = gap;
-    this.borderRadius = this.width/4;
+    this.borderRadius = this.width / 4;
     this.cols = cols;
     this.index = index;
 
