@@ -1,24 +1,24 @@
 import './style.css';
 import gsap from 'gsap';
 import barba from '@barba/core';
-// barba.init({
-//   debug: true,
-//   transitions: [
-//     {
-//       name: 'opacity-transition',
-//       leave(data) {
-//         return gsap.to(data.current.container, {
-//           opacity: 0,
-//         });
-//       },
-//       enter(data) {
-//         return gsap.from(data.next.container, {
-//           opacity: 0,
-//         });
-//       },
-//     },
-//   ],
-// });
+barba.init({
+  debug: true,
+  transitions: [
+    {
+      name: 'opacity-transition',
+      leave(data) {
+        return gsap.to(data.current.container, {
+          opacity: 0,
+        });
+      },
+      enter(data) {
+        return gsap.from(data.next.container, {
+          opacity: 0,
+        });
+      },
+    },
+  ],
+});
 
 const roundedClipPath = (ctx, x, y, width, height, radius) => {
   ctx.beginPath();
@@ -36,24 +36,18 @@ const roundedClipPath = (ctx, x, y, width, height, radius) => {
 
 const getImage = () => {
   const image = new Image();
-  // image.src = './image.jpg';
-  // image.width = '1769';
-  // image.height = '2167';
-  // console.log(image);
   image.src = 'https://picsum.photos/1920/1080';
   return image;
 };
 
 class Grid {
-  constructor(blackOutCells) {
+  constructor({ wrap, blackOutCells }) {
+    this.wrap = wrap;
     this.canvas = document.createElement('canvas');
-    this.parent = document.querySelector('#containerCanvas');
+    this.parent = this.wrap.querySelector('#containerCanvas');
     this.timeline = gsap.timeline();
     this.timelineHover = gsap.timeline();
     this.blackOutCells = blackOutCells ?? [];
-    this.baseCellSize = 86;
-    this.cellWidth = this.baseCellSize;
-    this.cellHeight = this.baseCellSize;
     this.gap = 1;
     this.image = getImage();
     this.image.onload = () => {
@@ -62,8 +56,13 @@ class Grid {
   }
 
   setUp() {
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    this.wrapWidth = this.wrap.getBoundingClientRect().width;
+    this.wrapHeight = this.wrap.getBoundingClientRect().height;
+    this.baseCellSize = this.wrapWidth / (this.wrapWidth < 1000 ? 10 : 20);
+    this.cellWidth = this.baseCellSize;
+    this.cellHeight = this.baseCellSize;
+    this.canvas.width = this.wrapWidth;
+    this.canvas.height = this.wrapHeight;
     this.grid = [
       Math.floor(this.canvas.height / this.baseCellSize),
       Math.floor(this.canvas.width / this.baseCellSize),
@@ -90,142 +89,26 @@ class Grid {
           blackOut:
             this.blackOutCells.filter((bCell) => bCell === i)?.length > 0,
           cols: this.cols,
-          offsetX: 0,
-          offsetY: 0,
           index: i,
         })
       );
     }
   }
 
-  hoverEffect(x, y) {
-    this.ctx.beginPath();
-    this.fillStyle = 'rgba(255,0,0,0.5)';
-    this.ctx.rect(x, y, 100, 100);
-    this.ctx.fill();
-  }
-
-  getIndex(e) {
-    const rect = this.canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const col = Math.floor(x / this.cellWidth);
-    const row = Math.floor(y / this.cellHeight);
-    return row * this.grid[1] + col;
-  }
-
-  onCellClick(e) {
-    this.animateBoxes(this.getIndex(e));
-  }
-
   events() {
     this.setUp();
-
-    this.lastIndex = 0;
-
-    // const handleMouseMove = (e) => {
-    //   const hoveredIndex = this.getIndex(e);
-    //   if (this.lastIndex !== hoveredIndex) {
-    //     this.animateHover(
-    //       this.cells[hoveredIndex].x,
-    //       this.cells[hoveredIndex].y,
-    //       1
-    //     );
-    //     this.lastIndex = hoveredIndex;
-    //   }
-    // };
-
-    // const handleMouseEnter = (e) => {
-    //   const hoveredIndex = this.getIndex(e);
-    //   this.animateHover(
-    //     this.cells[hoveredIndex].x,
-    //     this.cells[hoveredIndex].y,
-    //     1
-    //   );
-    //   this.lastIndex = hoveredIndex;
-    // };
-
-    // const handleMouseLeave = (e) => {
-    //   this.animateHover(
-    //     this.cells[this.lastIndex].x,
-    //     this.cells[this.lastIndex].y,
-    //     0
-    //   );
-    //   this.lastIndex = this.getIndex(e);
-    // };
-    // const handleClick = (e) => {
-    //   this.onCellClick(e);
-    // };
-
-    const handleResize = () => {
+    const resizeObserver = new ResizeObserver(() => {
       this.setUp();
       if (this.imageCanvas) {
         this.imageCanvas.onResize(this.canvas.width, this.canvas.height, 0);
       }
-      this.createHover();
       this.buildGrid();
-    };
-
-    window.addEventListener('resize', handleResize);
-    // this.canvas.addEventListener('click', handleClick);
-    // this.canvas.addEventListener('mousemove', handleMouseMove);
-    // this.canvas.addEventListener('mouseenter', handleMouseEnter);
-    // this.canvas.addEventListener('mouseleave', handleMouseLeave);
-  }
-
-  animateHover(x, y, opacity) {
-    this.timelineHover.clear();
-    this.timelineHover.to(this.cellHover, {
-      x,
-      y,
-      opacity,
-      duration: 0.8,
-      ease: 'expo.out',
-      onUpdate: () => this.onUpdate(),
     });
+
+    resizeObserver.observe(this.wrap);
   }
-
-  createHover() {
-    this.cellHover = new CellHover({
-      ctx: this.ctx,
-      x: 0,
-      y: 0,
-      width: this.cellWidth,
-      height: this.cellHeight,
-    });
-  }
-
-  animateBoxes(from) {
-    this.timeline.seek(0).clear();
-
-    this.timeline.to(this.cells, {
-      duration: 1.3,
-      keyframes: {
-        scale: [1, 0.9, 1],
-        opacity: [1, 0.8, 1],
-      },
-      stagger: {
-        amount: 1,
-        grid: this.grid,
-        from,
-      },
-      ease: 'power3.out',
-      onUpdate: () => this.onUpdate(),
-    });
-    // .to(this.cells, {
-    //   duration: 1.3,
-    //   offsetX: -this.cells[from].x,
-    //   offsetY: -this.cells[from].y,
-    //   width: 160,
-    //   height: 160,
-    //   ease: 'power3.out',
-    //   onUpdate: () => this.onUpdate(),
-    // })
-  }
-
   onUpdate() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
     this.cells.forEach((cell) => cell.draw());
     this.imageCanvas.draw();
     this.cellHover.draw();
@@ -234,26 +117,14 @@ class Grid {
   init() {
     this.parent.appendChild(this.canvas);
     this.events();
-    this.imageCanvas = new ImageCanvas(this.image, this.canvas, 0);
+    this.imageCanvas = new ImageCanvas(this.image, this.canvas);
     this.ctx = this.canvas.getContext('2d');
-    this.createHover();
     this.buildGrid();
   }
 }
 
 class Cell {
-  constructor({
-    ctx,
-    width,
-    height,
-    image,
-    gap,
-    blackOut,
-    cols,
-    offsetX,
-    offsetY,
-    index,
-  }) {
+  constructor({ ctx, width, height, image, gap, blackOut, cols, index }) {
     this.ctx = ctx;
     this.scale = 1;
     this.opacity = 1;
@@ -264,16 +135,14 @@ class Cell {
     this.gap = gap;
     this.borderRadius = 20;
     this.cols = cols;
-    this.offsetX = offsetX;
-    this.offsetY = offsetY;
     this.index = index;
 
     this.draw();
   }
 
   draw() {
-    this.x = (this.index % this.cols) * this.width + this.offsetX;
-    this.y = Math.floor(this.index / this.cols) * this.height + this.offsetY;
+    this.x = (this.index % this.cols) * this.width;
+    this.y = Math.floor(this.index / this.cols) * this.height;
 
     this.ctx.save();
     this.ctx.globalAlpha = this.opacity;
@@ -286,12 +155,10 @@ class Cell {
       this.x + this.width * 0.5,
       this.y + this.height * 0.5
     );
-    // this.ctx.translate(this.x + this.width * 0.5, this.y + this.height * 0.5);
     this.destinationX = this.width * -0.5 + this.gap;
     this.destinationY = this.height * -0.5 + this.gap;
     this.destinationSizeWidth = this.width - this.gap * 2;
     this.destinationSizeHeight = this.height - this.gap * 2;
-    // this.ctx.scale(this.scale, this.scale);
     if (!this.blackOut) {
       roundedClipPath(
         this.ctx,
@@ -318,94 +185,36 @@ class Cell {
   }
 }
 
-class CellHover {
-  constructor({ ctx, x, y, width, height }) {
-    this.ctx = ctx;
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
-    this.opacity = 0;
-  }
-
-  draw() {
-    this.ctx.save();
-    this.ctx.beginPath();
-    roundedClipPath(this.ctx, this.x, this.y, this.width, this.height, 6);
-    this.ctx.clip();
-    this.ctx.strokeStyle = `rgba(255,255,255,${this.opacity})`;
-    this.ctx.lineWidth = 5;
-    this.ctx.rect(this.x, this.y, this.width, this.height);
-    this.ctx.shadowColor = `rgba(255,255,255,${this.opacity})`;
-    this.ctx.shadowBlur = 10;
-    this.ctx.shadowOffsetX = 0;
-    this.ctx.shadowOffsetY = 0;
-    this.ctx.stroke();
-    this.ctx.restore();
-
-    // this.ctx.save();
-    // this.ctx.beginPath();
-    // roundedClipPath(this.ctx, this.x, this.y, this.width, this.height, 6);
-    // this.ctx.clip();
-
-    // // Get the pixel data of the background image at the top-left corner of the rectangle
-    // const imageData = this.ctx.getImageData(this.x, this.y, 1, 1);
-    // const [r, g, b] = imageData.data;
-
-    // // Invert the stroke color based on the average of the RGB values
-    // const averageColor = (r + g + b) / 3;
-    // const invertedColor = 255 - averageColor;
-
-    // // Set the stroke color and shadow color using the inverted value
-    // this.ctx.strokeStyle = `rgba(${invertedColor}, ${invertedColor}, ${invertedColor}, ${this.opacity})`;
-    // this.ctx.shadowColor = `rgba(${invertedColor}, ${invertedColor}, ${invertedColor}, ${this.opacity})`;
-
-    // this.ctx.lineWidth = 5;
-    // this.ctx.rect(this.x, this.y, this.width, this.height);
-    // this.ctx.shadowBlur = 10;
-    // this.ctx.shadowOffsetX = 0;
-    // this.ctx.shadowOffsetY = 0;
-    // this.ctx.stroke();
-    // this.ctx.restore();
-  }
-}
-
 class ImageCanvas {
-  constructor(image, mainCanvas, offsetX) {
+  constructor(image, mainCanvas) {
     this.mainCanvas = mainCanvas;
     this.image = image;
     this.canvas = document.createElement('canvas');
     this.ctx = this.canvas.getContext('2d');
-    this.imageWidth = this.image.width;
-    this.imageHeight = this.image.height;
-    this.sceneOffsetX = offsetX;
-    this.offsetX = offsetX;
-    this.offsetY = 0;
-    this.imageScale = 1;
-    this.setUp();
+    this.imageSize = {
+      width: this.image.width,
+      height: this.image.height,
+    };
+    this.setUp(this.mainCanvas.width, this.mainCanvas.height);
   }
 
-  onResize(width, height, sceneOffsetX) {
+  onResize(width, height) {
+    this.setUp(width, height);
+  }
+
+  setUp(width, height) {
     this.canvas.width = width;
     this.canvas.height = height;
-    this.sceneOffsetX = sceneOffsetX;
-    this.draw();
-  }
-
-  setUp() {
-    this.canvas.width = this.mainCanvas.width;
-    this.canvas.height = this.mainCanvas.height;
-    this.offsetX = this.sceneOffsetX;
     this.draw();
   }
 
   draw() {
-    const cw = (this.canvas.width - this.sceneOffsetX) * this.imageScale;
-    const ch = this.canvas.height * this.imageScale;
+    const { width: cw, height: ch } = this.canvas;
+    const { width: iw, height: ih } = this.imageSize;
 
-    const scale = Math.max(cw / this.imageWidth, ch / this.imageHeight);
-    const x = (cw - scale * this.imageWidth) * 0.5 + this.offsetX;
-    const y = (ch - scale * this.imageHeight) * 0.5 + this.offsetY;
+    const scale = Math.max(cw / iw, ch / ih);
+    const x = (cw - scale * iw) * 0.5;
+    const y = (ch - scale * ih) * 0.5;
 
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.setTransform(scale, 0, 0, scale, x, y);
@@ -420,4 +229,7 @@ for (let i = 0; i < 100; i++) {
   randomNumbers.push(randomNumber);
 }
 
-new Grid(randomNumbers);
+new Grid({
+  wrap: document.querySelector('.simple-grid'),
+  blackOutCells: randomNumbers,
+});
