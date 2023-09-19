@@ -133,7 +133,7 @@ class Cell {
     this.image = image;
     this.blackOut = blackOut;
     this.gap = gap;
-    this.borderRadius = 20;
+    this.borderRadius = this.width/4;
     this.cols = cols;
     this.index = index;
 
@@ -222,14 +222,20 @@ class ImageCanvas {
   }
 }
 
-const blackoutCells = [];
+const simpleGrids = document.querySelectorAll('.simple-grid');
 
-for (let i = 0; i < 100; i++) {
-  const randomNumber = Math.floor(Math.random() * 401);
-  blackoutCells.push(randomNumber);
+if (simpleGrids.length) {
+  simpleGrids.forEach((simpleGrid) => {
+    const blackoutCells = [];
+
+    for (let i = 0; i < 100; i++) {
+      const randomNumber = Math.floor(Math.random() * 401);
+      blackoutCells.push(randomNumber);
+    }
+
+    new SimpleGrid({
+      wrap: simpleGrid,
+      blackOutCells: blackoutCells,
+    });
+  });
 }
-
-new SimpleGrid({
-  wrap: document.querySelector('.simple-grid'),
-  blackOutCells: blackoutCells,
-});
