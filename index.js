@@ -40,7 +40,7 @@ const getImage = () => {
   return image;
 };
 
-class Grid {
+class SimpleGrid {
   constructor({ wrap, blackOutCells }) {
     this.wrap = wrap;
     this.canvas = document.createElement('canvas');
@@ -222,14 +222,14 @@ class ImageCanvas {
   }
 }
 
-const randomNumbers = [];
+const blackoutCells = [];
 
 for (let i = 0; i < 100; i++) {
   const randomNumber = Math.floor(Math.random() * 401);
-  randomNumbers.push(randomNumber);
+  blackoutCells.push(randomNumber);
 }
 
-new Grid({
+new SimpleGrid({
   wrap: document.querySelector('.simple-grid'),
-  blackOutCells: randomNumbers,
+  blackOutCells: blackoutCells,
 });
