@@ -34,9 +34,9 @@ const roundedClipPath = (ctx, x, y, width, height, radius) => {
   ctx.closePath();
 };
 
-const getImage = () => {
+const getImage = (url) => {
   const image = new Image();
-  image.src = 'https://picsum.photos/1920/1080';
+  image.src = url;
   return image;
 };
 
@@ -44,12 +44,12 @@ class SimpleGrid {
   constructor({ wrap, blackOutCells }) {
     this.wrap = wrap;
     this.canvas = document.createElement('canvas');
-    this.parent = this.wrap.querySelector('#containerCanvas');
+    this.parent = this.wrap.querySelector('.canvas-container');
     this.timeline = gsap.timeline();
     this.timelineHover = gsap.timeline();
     this.blackOutCells = blackOutCells ?? [];
     this.gap = 1;
-    this.image = getImage();
+    this.image = getImage('https://picsum.photos/1920/1080');
     this.image.onload = () => {
       this.init();
     };
@@ -82,7 +82,7 @@ class SimpleGrid {
 
     for (let i = 0; i < this.numberOfCells; i++) {
       this.cells.push(
-        new Cell({
+        new SimpleCell({
           ctx: this.ctx,
           width: this.cellWidth,
           height: this.cellHeight,
@@ -119,13 +119,13 @@ class SimpleGrid {
   init() {
     this.parent.appendChild(this.canvas);
     this.events();
-    this.imageCanvas = new ImageCanvas(this.image, this.canvas);
+    this.imageCanvas = new SimpleImageCanvas(this.image, this.canvas);
     this.ctx = this.canvas.getContext('2d');
     this.buildGrid();
   }
 }
 
-class Cell {
+class SimpleCell {
   constructor({ ctx, width, height, image, gap, blackOut, cols, index }) {
     this.ctx = ctx;
     this.scale = 1;
@@ -187,7 +187,7 @@ class Cell {
   }
 }
 
-class ImageCanvas {
+class SimpleImageCanvas {
   constructor(image, mainCanvas) {
     this.mainCanvas = mainCanvas;
     this.image = image;
